@@ -119,6 +119,8 @@ import org.opensearch.sql.exception.SemanticCheckException;
 import org.opensearch.sql.expression.function.BuiltinFunctionName;
 import org.opensearch.sql.expression.function.PPLFuncImpTable;
 import org.opensearch.sql.utils.ParseUtils;
+import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 
 public class CalciteRelNodeVisitor extends AbstractNodeVisitor<RelNode, CalcitePlanContext> {
 
@@ -359,13 +361,42 @@ public class CalciteRelNodeVisitor extends AbstractNodeVisitor<RelNode, CalciteP
   @Override
   public RelNode visitReverse(org.opensearch.sql.ast.tree.Reverse node, CalcitePlanContext context) {
     visitChildren(node, context);
-    // Add ROW_NUMBER() column
+
+    RelNode input = context.relBuilder.peek();
+    String className = input.getClass().getName();
+
+    if (className.contains("CalciteLogicalIndexScan")) {
+      System.out.println("REVERSE: Attempting _id sort pushdown");
+
+      try {
+        List<String> fieldNames = input.getRowType().getFieldNames();
+        int idIndex = fieldNames.indexOf("_id");
+
+        if (idIndex >= 0) {
+          List<RexNode> sortList = List.of(
+                  context.relBuilder.desc(context.relBuilder.field(idIndex))
+          );
+
+          context.relBuilder.sort(sortList);
+          System.out.println("REVERSE: _id sort applied successfully");
+          return context.relBuilder.peek(); // RETURN HERE - don't fall through
+        }
+      } catch (Exception e) {
+        System.out.println("REVERSE: _id sort failed: " + e.getMessage());
+      }
+    }
+
+    // Only use row number if _id sort completely failed
+    System.out.println("REVERSE: Using row number approach");
+    return handleReverseWithRowNumber(context);
+  }
+
+  private RelNode handleReverseWithRowNumber(CalcitePlanContext context) {
+    // Original row number implementation
     RexNode rowNumber = context.relBuilder.aggregateCall(SqlStdOperatorTable.ROW_NUMBER)
-        .over().rowsTo(RexWindowBounds.CURRENT_ROW).as("__reverse_row_num__");
+            .over().rowsTo(RexWindowBounds.CURRENT_ROW).as("__reverse_row_num__");
     context.relBuilder.projectPlus(rowNumber);
-    // Sort by row number descending
     context.relBuilder.sort(context.relBuilder.desc(context.relBuilder.field("__reverse_row_num__")));
-    // Remove row number column
     context.relBuilder.projectExcept(context.relBuilder.field("__reverse_row_num__"));
     return context.relBuilder.peek();
   }
