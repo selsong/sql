@@ -247,6 +247,44 @@ public class CalciteLogicalIndexScan extends AbstractCalciteIndexScan {
     return null;
   }
 
+  public CalciteLogicalIndexScan pushDownReverse() {
+    RelCollation currentCollation = getTraitSet().getCollation();
+    RelCollation reversedCollation;
+
+    if (currentCollation != null && !currentCollation.getFieldCollations().isEmpty()) {
+      List<RelFieldCollation> flipped = currentCollation.getFieldCollations().stream()
+          .map(fc -> fc.withDirection(
+              fc.getDirection() == RelFieldCollation.Direction.ASCENDING
+                  ? RelFieldCollation.Direction.DESCENDING
+                  : RelFieldCollation.Direction.ASCENDING))
+          .collect(Collectors.toList());
+      reversedCollation = RelCollations.of(flipped);
+      return pushDownSort(reversedCollation.getFieldCollations());
+    }
+    // for now don't pushdown
+    return null;
+
+  }
+
+//  public CalciteLogicalIndexScan pushDownReverse() {
+//    RelCollation currentCollation = getTraitSet().getCollation();
+//
+//    if (currentCollation == null || currentCollation.getFieldCollations().isEmpty()) {
+//      // No sort to reverse, don't pushdown
+//      return null;
+//    }
+//
+//    List<RelFieldCollation> reversedCollations = currentCollation.getFieldCollations().stream()
+//            .map(fc -> fc.withDirection(
+//                    fc.getDirection() == RelFieldCollation.Direction.ASCENDING
+//                            ? RelFieldCollation.Direction.DESCENDING
+//                            : RelFieldCollation.Direction.ASCENDING))
+//            .collect(Collectors.toList());
+//
+//    return pushDownSort(reversedCollations);
+//  }
+
+
   public CalciteLogicalIndexScan pushDownSort(List<RelFieldCollation> collations) {
     try {
       List<String> collationNames = getCollationNames(collations);

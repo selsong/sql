@@ -20,6 +20,8 @@ public class OpenSearchIndexRules {
       OpenSearchLimitIndexScanRule.Config.DEFAULT.toRule();
   private static final OpenSearchSortIndexScanRule SORT_INDEX_SCAN =
       OpenSearchSortIndexScanRule.Config.DEFAULT.toRule();
+  private static final OpenSearchReverseIndexScanRule REVERSE_INDEX_SCAN =
+      OpenSearchReverseIndexScanRule.INSTANCE;
 
   public static final List<RelOptRule> OPEN_SEARCH_INDEX_SCAN_RULES =
       ImmutableList.of(
@@ -27,7 +29,8 @@ public class OpenSearchIndexRules {
           FILTER_INDEX_SCAN,
           AGGREGATE_INDEX_SCAN,
           LIMIT_INDEX_SCAN,
-          SORT_INDEX_SCAN);
+          SORT_INDEX_SCAN,
+          REVERSE_INDEX_SCAN);
 
   // prevent instantiation
   private OpenSearchIndexRules() {}
