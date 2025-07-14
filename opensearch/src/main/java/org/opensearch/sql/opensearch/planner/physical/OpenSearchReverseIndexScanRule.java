@@ -1,48 +1,55 @@
-//package org.opensearch.sql.opensearch.planner.physical;
-//
-//import org.apache.calcite.plan.RelOptRule;
-//import org.apache.calcite.plan.RelOptRuleCall;
-//import org.apache.calcite.rel.logical.LogicalSort;
-//import org.apache.calcite.rel.logical.LogicalProject;
-//import org.opensearch.sql.opensearch.storage.scan.CalciteLogicalIndexScan;
-//
-//public class OpenSearchReverseIndexScanRule extends RelOptRule {
-//
-//    public static final OpenSearchReverseIndexScanRule INSTANCE = new OpenSearchReverseIndexScanRule();
-//
-//    private OpenSearchReverseIndexScanRule() {
-//        super(
-//                operand(LogicalSort.class,
-//                        operand(LogicalProject.class,
-//                                operand(CalciteLogicalIndexScan.class, none()))),
-//                "OpenSearchReverseIndexScanRule");
-//    }
-//
-//    @Override
-//    public void onMatch(RelOptRuleCall call) {
-//        LogicalSort sort = call.rel(0);
-//        LogicalProject project = call.rel(1);
-//        CalciteLogicalIndexScan scan = call.rel(2);
-//
-//        if (isReversePattern(sort)) {
-//            CalciteLogicalIndexScan newScan = scan.pushDownReverse();
-//            if (newScan != null) {
-//                call.transformTo(newScan);
-//            }
-//        }
-//    }
-//
-//    private boolean isReversePattern(LogicalSort sort) {
-//        // Check if this is a reverse pattern by looking for __reverse_row_num__ field
-//        return sort.getCollation().getFieldCollations().stream()
-//                .anyMatch(fc -> {
-//                    int fieldIndex = fc.getFieldIndex();
-//                    if (fieldIndex < sort.getInput().getRowType().getFieldCount()) {
-//                        String fieldName = sort.getInput().getRowType().getFieldList().get(fieldIndex).getName();
-//                        return "__reverse_row_num__".equals(fieldName) &&
-//                               fc.getDirection() == org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
-//                    }
-//                    return false;
-//                });
-//    }
-//}
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package org.opensearch.sql.opensearch.planner.physical;
+
+import java.util.function.Predicate;
+import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.rel.logical.LogicalSort;
+import org.immutables.value.Value;
+import org.opensearch.sql.opensearch.storage.scan.CalciteLogicalIndexScan;
+
+@Value.Enclosing
+public class OpenSearchReverseIndexScanRule extends RelRule<OpenSearchReverseIndexScanRule.Config> {
+
+    protected OpenSearchReverseIndexScanRule(Config config) {
+        super(config);
+    }
+
+    @Override
+    public void onMatch(RelOptRuleCall call) {
+        final LogicalSort sort = call.rel(0);
+        final CalciteLogicalIndexScan scan = call.rel(1);
+
+        CalciteLogicalIndexScan newScan = scan.pushDownReverse();
+        if (newScan != null) {
+            call.transformTo(newScan);
+        }
+    }
+
+    /** Rule configuration. */
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        OpenSearchReverseIndexScanRule.Config DEFAULT =
+                ImmutableOpenSearchReverseIndexScanRule.Config.builder()
+                        .build()
+                        .withOperandSupplier(
+                                b0 ->
+                                        b0.operand(LogicalSort.class)
+                                                .predicate(OpenSearchIndexScanRule::isReverseSort)
+                                                .oneInput(
+                                                        b1 ->
+                                                                b1.operand(CalciteLogicalIndexScan.class)
+                                                                        .predicate(
+                                                                                Predicate.not(OpenSearchIndexScanRule::isLimitPushed))
+                                                                        .noInputs()));
+
+        @Override
+        default OpenSearchReverseIndexScanRule toRule() {
+            return new OpenSearchReverseIndexScanRule(this);
+        }
+    }
+}

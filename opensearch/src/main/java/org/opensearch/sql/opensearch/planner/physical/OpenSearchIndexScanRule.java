@@ -56,4 +56,10 @@ public interface OpenSearchIndexScanRule {
   static boolean sortByFieldsOnly(LogicalSort sort) {
     return !sort.getCollation().getFieldCollations().isEmpty() && sort.fetch == null;
   }
+
+  static boolean isReverseSort(LogicalSort sort) {
+    return sort.fetch == null &&
+            !sort.getCollation().getFieldCollations().isEmpty();
+  }
+
 }
