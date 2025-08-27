@@ -79,6 +79,42 @@ public class StatsCommandIT extends PPLIntegTestCase {
   }
 
   @Test
+  public void testStatsCountNoParens() throws IOException {
+    JSONObject response =
+        executeQuery(String.format("source=%s | stats count", TEST_INDEX_ACCOUNT));
+    if (isCalciteEnabled()) {
+      verifySchema(response, schema("count", null, "bigint"));
+    } else {
+      verifySchema(response, schema("count", null, "int"));
+    }
+    verifyDataRows(response, rows(1000));
+  }
+
+  @Test
+  public void testStatsCountNoParensWithAlias() throws IOException {
+    JSONObject response =
+        executeQuery(String.format("source=%s | stats count as total_count", TEST_INDEX_ACCOUNT));
+    if (isCalciteEnabled()) {
+      verifySchema(response, schema("total_count", null, "bigint"));
+    } else {
+      verifySchema(response, schema("total_count", null, "int"));
+    }
+    verifyDataRows(response, rows(1000));
+  }
+
+  @Test
+  public void testStatsCountNoParensByGroup() throws IOException {
+    JSONObject response =
+        executeQuery(String.format("source=%s | stats count by gender", TEST_INDEX_ACCOUNT));
+    if (isCalciteEnabled()) {
+      verifySchema(response, schema("count", null, "bigint"), schema("gender", null, "string"));
+    } else {
+      verifySchema(response, schema("count", null, "int"), schema("gender", null, "string"));
+    }
+    verifyDataRows(response, rows(493, "F"), rows(507, "M"));
+  }
+
+  @Test
   public void testStatsCountAll() throws IOException {
     JSONObject response =
         executeQuery(String.format("source=%s | stats count()", TEST_INDEX_ACCOUNT));

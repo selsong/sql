@@ -81,6 +81,7 @@ Description
 >>>>>>>>>>>
 
 Usage: Returns a count of the number of expr in the rows retrieved by a SELECT statement.
+You can also use ``count`` without parentheses.
 
 Example::
 

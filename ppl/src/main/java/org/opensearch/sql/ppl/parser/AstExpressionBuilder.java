@@ -230,6 +230,12 @@ public class AstExpressionBuilder extends OpenSearchPPLParserBaseVisitor<Unresol
   }
 
   @Override
+  public UnresolvedExpression visitCountNoParensFunctionCall(
+      OpenSearchPPLParser.CountNoParensFunctionCallContext ctx) {
+    return new AggregateFunction("count", AllFields.of());
+  }
+
+  @Override
   public UnresolvedExpression visitDistinctCountFunctionCall(DistinctCountFunctionCallContext ctx) {
     String funcName = ctx.DISTINCT_COUNT_APPROX() != null ? "distinct_count_approx" : "count";
     return new AggregateFunction(funcName, visit(ctx.valueExpression()), true);
