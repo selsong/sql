@@ -400,7 +400,8 @@ statsAggTerm
 // aggregation functions
 statsFunction
    : statsFunctionName LT_PRTHS valueExpression RT_PRTHS                                                                            # statsFunctionCall
-   | COUNT LT_PRTHS RT_PRTHS                                                                                                        # countAllFunctionCall
+   | COUNT LT_PRTHS RT_PRTHS                                                                                                        # countFunctionCall
+   | COUNT                                                                                                                          # countFunctionNoParens
    | (DISTINCT_COUNT | DC) LT_PRTHS valueExpression RT_PRTHS                                                                        # distinctCountFunctionCall
    | percentileFunctionName = (PERCENTILE | PERCENTILE_APPROX) LT_PRTHS valueExpression COMMA percent = integerLiteral RT_PRTHS     # percentileFunctionCall
    ;

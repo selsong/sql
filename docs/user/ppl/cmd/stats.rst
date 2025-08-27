@@ -82,6 +82,11 @@ Description
 
 Usage: Returns a count of the number of expr in the rows retrieved by a SELECT statement.
 
+Syntax:
+* ``count()`` - Count all rows
+* ``count(field)`` - Count non-null values in the specified field
+* ``count`` - Alias for ``count()``
+
 Example::
 
     os> source=accounts | stats count();
@@ -316,6 +321,16 @@ PPL query::
     |---------|
     | 4       |
     +---------+
+
+Alternatively, you can use ``count`` without parentheses (SPL compatibility)::
+
+    os> source=accounts | stats count;
+    fetched rows / total rows = 1/1
+    +-------+
+    | count |
+    |-------|
+    | 4     |
+    +-------+
 
 
 Example 2: Calculate the average of a field
