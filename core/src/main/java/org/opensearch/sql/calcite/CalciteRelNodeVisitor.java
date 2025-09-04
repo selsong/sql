@@ -1601,8 +1601,10 @@ public class CalciteRelNodeVisitor extends AbstractNodeVisitor<RelNode, CalciteP
   private void applyFiltersAndSort(boolean useOther, CalcitePlanContext context) {
     if (!useOther) {
       context.relBuilder.filter(
-          context.relBuilder.notEquals(
-              context.relBuilder.field(1), context.relBuilder.literal("OTHER")));
+          context.relBuilder.or(
+              context.relBuilder.notEquals(
+                  context.relBuilder.field(1), context.relBuilder.literal("OTHER")),
+              context.relBuilder.isNull(context.relBuilder.field(1))));
     }
     context.relBuilder.sort(context.relBuilder.field(0), context.relBuilder.field(1));
   }
