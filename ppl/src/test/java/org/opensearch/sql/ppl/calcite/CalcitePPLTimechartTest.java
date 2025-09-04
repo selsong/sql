@@ -258,7 +258,9 @@ public class CalcitePPLTimechartTest extends CalcitePPLAbstractTest {
             + "GROUP BY `t1`.`@timestamp`, CASE WHEN `t7`.`host` IS NOT NULL THEN `t1`.`host` ELSE"
             + " CASE WHEN `t1`.`host` IS NULL THEN NULL ELSE 'OTHER' END END\n"
             + "HAVING CASE WHEN `t7`.`host` IS NOT NULL THEN `t1`.`host` ELSE CASE WHEN `t1`.`host`"
-            + " IS NULL THEN NULL ELSE 'OTHER' END END <> 'OTHER'\n"
+            + " IS NULL THEN NULL ELSE 'OTHER' END END IS NULL OR CASE WHEN `t7`.`host` IS NOT NULL"
+            + " THEN `t1`.`host` ELSE CASE WHEN `t1`.`host` IS NULL THEN NULL ELSE 'OTHER' END END"
+            + " <> 'OTHER'\n"
             + "ORDER BY `t1`.`@timestamp` NULLS LAST, 2 NULLS LAST";
     verifyPPLToSparkSQL(root, expectedSparkSql);
   }

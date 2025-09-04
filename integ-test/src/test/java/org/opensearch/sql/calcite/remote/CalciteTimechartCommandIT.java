@@ -447,6 +447,24 @@ public class CalciteTimechartCommandIT extends PPLIntegTestCase {
   }
 
   @Test
+  public void testTimechartWithNullAndOtherFalse() throws IOException {
+    createEventsNullIndex();
+    JSONObject result =
+        executeQuery("source=events_null | timechart span=1d limit=2 useother=f count() by host");
+    verifySchema(
+        result,
+        schema("@timestamp", "timestamp"),
+        schema("host", "string"),
+        schema("count", "bigint"));
+    verifyDataRows(
+        result,
+        rows("2024-07-01 00:00:00", "web-01", 2),
+        rows("2024-07-01 00:00:00", "web-02", 2),
+        rows("2024-07-01 00:00:00", null, 1));
+    assertEquals(3, result.getInt("total"));
+  }
+
+  @Test
   public void testTimechartWithNullAndLimit() throws IOException {
     createEventsNullIndex();
 
